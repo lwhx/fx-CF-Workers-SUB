@@ -23,6 +23,19 @@ let subconverter = "subapi-loadbalancing.pages.dev"; //在线订阅转换后端�
 let subconfig = "https://raw.githubusercontent.com/cmliu/ACL4SSR/main/Clash/config/ACL4SSR_Online_MultiCountry.ini"; //订阅配置文件
 let subProtocol = 'https';
 
+async function getLinkFromCloud(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const textData = await response.text(); // 获取纯文本内容
+        return textData.trim(); // 去除可能的空格和换行符
+    } catch (error) {
+        console.error('Error fetching LINK from cloud:', error);
+        return null; // 在错误情况下返回 null
+    }
+}
 export default {
 	async fetch (request,env) {
 		const userAgentHeader = request.headers.get('User-Agent');
@@ -42,8 +55,21 @@ export default {
 		}
 		subconfig = env.SUBCONFIG || subconfig;
 		FileName = env.SUBNAME || FileName;
-		MainData = env.LINK || MainData;
-		if(env.LINKSUB) urls = await ADD(env.LINKSUB);
+
+		// 如果 env.LINK 是 URL，则通过链接获取值
+                if (env.LINK) {
+                   if (env.LINK.startsWith('http://') || env.LINK.startsWith('https://')) {
+                       MainData = await getLinkFromCloud(env.LINK); // 通过云端链接获取 LINK 值
+                   } else {
+                     MainData = env.LINK;
+                   }
+                }
+
+               if (env.LINKSUB) urls = await ADD(env.LINKSUB);
+
+				
+		//MainData = env.LINK || MainData;
+		//if(env.LINKSUB) urls = await ADD(env.LINKSUB);
 
 		const currentDate = new Date();
 		currentDate.setHours(0, 0, 0, 0); 
